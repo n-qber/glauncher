@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.glauncher"
+    namespace = "br.com.nqber.glauncher"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.glauncher"
+        applicationId = "br.com.nqber.glauncher"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

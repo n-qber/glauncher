@@ -1,4 +1,4 @@
-package com.example.glauncher
+package br.com.nqber.glauncher
 
 import java.util.Locale
 

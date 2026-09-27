@@ -1,4 +1,4 @@
-package com.example.glauncher
+package br.com.nqber.glauncher
 
 import android.content.BroadcastReceiver
 import android.content.Context

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.example.glauncher.SquareFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<br.com.nqber.glauncher.SquareFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/circle_root"
     android:layout_width="match_parent"
@@ -72,4 +72,4 @@
 
     </LinearLayout>
 
-</com.example.glauncher.SquareFrameLayout>
+</br.com.nqber.glauncher.SquareFrameLayout>

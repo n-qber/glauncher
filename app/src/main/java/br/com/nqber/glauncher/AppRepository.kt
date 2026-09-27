@@ -1,4 +1,4 @@
-package com.example.glauncher
+package br.com.nqber.glauncher
 
 import android.content.Context
 import android.content.Intent
