@@ -7,6 +7,7 @@ A minimalist, bloat-free Android app launcher written in Kotlin. It displays a s
 - **Minimalist List**: Displays installed launcher applications in an alphabetical list.
 - **Direct Launch**: Tapping an item opens the application.
 - **Auto Refresh**: Updates the list automatically when returning to the home screen.
+- **Self-Updating**: Automatically checks GitHub Releases for new APK versions and prompts to update.
 - **Home Screen Support**: Configured as an Android Home/Launcher app (`Intent.CATEGORY_HOME`).
 - **Modern Package Visibility**: Properly configured for Android 11+ (API 30+) with package visibility queries.
 

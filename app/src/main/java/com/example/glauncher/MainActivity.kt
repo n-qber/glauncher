@@ -34,6 +34,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
         recyclerView.adapter = adapter
+
+        // Check for updates in the background
+        UpdateManager.checkForUpdates(this)
     }
 
     override fun onResume() {
