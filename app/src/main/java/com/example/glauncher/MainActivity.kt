@@ -17,7 +17,8 @@ class MainActivity : AppCompatActivity() {
 
     private data class State(
         val candidates: List<AppInfo>,
-        val title: String
+        val title: String,
+        val charIndex: Int = 0
     )
 
     private data class CircleViewHolder(
@@ -124,7 +125,7 @@ class MainActivity : AppCompatActivity() {
     private fun resetToRoot() {
         val allApps = AppRepository.getApps(this)
         history.clear()
-        history.add(State(allApps, "GLauncher"))
+        history.add(State(allApps, "GLauncher", charIndex = 0))
         renderCurrentState()
     }
 
@@ -149,8 +150,8 @@ class MainActivity : AppCompatActivity() {
         }
         totalAppsCount.text = "${candidates.size} apps"
 
-        // Partition into 6 buckets
-        val buckets = GridPartition.partition(candidates)
+        // Partition into 6 buckets using prefix funneling at charIndex
+        val buckets = GridPartition.partition(candidates, currentState.charIndex)
 
         for (i in 0 until 6) {
             val holder = circleHolders[i]
@@ -184,8 +185,8 @@ class MainActivity : AppCompatActivity() {
 
                     holder.root.setOnClickListener {
                         it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                        // Drill down to this bucket's candidates
-                        history.add(State(bucket.apps, bucket.rangeLabel))
+                        // Drill down: advance to next character index
+                        history.add(State(bucket.apps, bucket.rangeLabel, charIndex = bucket.nextCharIndex))
                         renderCurrentState()
                     }
                 }
