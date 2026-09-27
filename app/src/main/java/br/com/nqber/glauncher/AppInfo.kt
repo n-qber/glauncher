@@ -1,12 +1,10 @@
 package br.com.nqber.glauncher
 
-import android.graphics.drawable.Drawable
 import java.text.Normalizer
 
 data class AppInfo(
     val label: String,
-    val packageName: String,
-    val icon: Drawable
+    val packageName: String
 ) {
     val cleanLabel: String = Normalizer.normalize(label.trim(), Normalizer.Form.NFD)
         .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")

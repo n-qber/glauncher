@@ -12,6 +12,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -123,10 +127,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun resetToRoot() {
-        val allApps = AppRepository.getApps(this)
-        history.clear()
-        history.add(State(allApps, "GLauncher", charIndex = 0))
-        renderCurrentState()
+        lifecycleScope.launch {
+            val allApps = withContext(Dispatchers.IO) {
+                AppRepository.getApps(this@MainActivity)
+            }
+            history.clear()
+            history.add(State(allApps, "GLauncher", charIndex = 0))
+            renderCurrentState()
+        }
     }
 
     private fun goBack() {
@@ -165,11 +173,11 @@ class MainActivity : AppCompatActivity() {
                 holder.root.visibility = View.VISIBLE
 
                 if (bucket.isSingleApp) {
-                    // Show single app icon & label
+                    // Show single app icon & label (lazy load icon on demand)
                     val app = bucket.apps.first()
                     holder.rangeContainer.visibility = View.GONE
                     holder.appContainer.visibility = View.VISIBLE
-                    holder.appIcon.setImageDrawable(app.icon)
+                    holder.appIcon.setImageDrawable(AppRepository.getIcon(this, app.packageName))
                     holder.appLabel.text = app.label
 
                     holder.root.setOnClickListener {
