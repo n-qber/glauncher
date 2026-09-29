@@ -72,29 +72,24 @@ class CircularRangeView @JvmOverloads constructor(
         val cy = h / 2f
         val radius = min(w, h) / 2f
 
-        countPaint.textSize = spToPx(11f)
-
         when {
             chars.size == 1 -> {
-                singleLetterPaint.textSize = spToPx(28f)
+                singleLetterPaint.textSize = spToPx(34f)
                 val charStr = chars[0].toString()
-                val charCenterY = if (countText.isNotEmpty()) cy - dpToPx(6f) else cy
-                val charBaseline = charCenterY - (singleLetterPaint.descent() + singleLetterPaint.ascent()) / 2f
+                val charBaseline = cy - (singleLetterPaint.descent() + singleLetterPaint.ascent()) / 2f
                 canvas.drawText(charStr, cx, charBaseline, singleLetterPaint)
-
-                if (countText.isNotEmpty()) {
-                    val countCenterY = cy + dpToPx(16f)
-                    val countBaseline = countCenterY - (countPaint.descent() + countPaint.ascent()) / 2f
-                    canvas.drawText(countText, cx, countBaseline, countPaint)
-                }
             }
 
             chars.size > 1 -> {
                 val n = chars.size
-                val letterSp = if (n <= 4) 16f else 14f
+                val (letterSp, rFactor) = when (n) {
+                    2 -> Pair(26f, 0.35f)
+                    3 -> Pair(22f, 0.38f)
+                    4 -> Pair(22f, 0.40f)
+                    else -> Pair(18f, 0.44f)
+                }
                 letterPaint.textSize = spToPx(letterSp)
-
-                val rLetters = radius * 0.58f
+                val rLetters = radius * rFactor
 
                 val anglesDeg = when (n) {
                     2 -> listOf(180.0, 0.0) // Left, Right
@@ -111,25 +106,13 @@ class CircularRangeView @JvmOverloads constructor(
                     val baseline = ly - (letterPaint.descent() + letterPaint.ascent()) / 2f
                     canvas.drawText(chars[i].toString(), lx, baseline, letterPaint)
                 }
-
-                if (countText.isNotEmpty()) {
-                    val countBaseline = cy - (countPaint.descent() + countPaint.ascent()) / 2f
-                    canvas.drawText(countText, cx, countBaseline, countPaint)
-                }
             }
 
             else -> {
                 if (fallbackLabel.isNotEmpty()) {
-                    singleLetterPaint.textSize = spToPx(20f)
-                    val labelCenterY = if (countText.isNotEmpty()) cy - dpToPx(6f) else cy
-                    val labelBaseline = labelCenterY - (singleLetterPaint.descent() + singleLetterPaint.ascent()) / 2f
+                    singleLetterPaint.textSize = spToPx(24f)
+                    val labelBaseline = cy - (singleLetterPaint.descent() + singleLetterPaint.ascent()) / 2f
                     canvas.drawText(fallbackLabel, cx, labelBaseline, singleLetterPaint)
-                }
-
-                if (countText.isNotEmpty()) {
-                    val countCenterY = if (fallbackLabel.isNotEmpty()) cy + dpToPx(14f) else cy
-                    val countBaseline = countCenterY - (countPaint.descent() + countPaint.ascent()) / 2f
-                    canvas.drawText(countText, cx, countBaseline, countPaint)
                 }
             }
         }
