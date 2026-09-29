@@ -7,7 +7,8 @@ data class GridBucket(
     val rangeLabel: String,
     val countText: String = "${apps.size} apps",
     val isSingleApp: Boolean = (apps.size == 1),
-    val nextCharIndex: Int = 0
+    val nextCharIndex: Int = 0,
+    val chars: List<Char> = emptyList()
 )
 
 object GridPartition {
@@ -81,7 +82,8 @@ object GridPartition {
                             rangeLabel = ch.toString().uppercase(Locale.getDefault()),
                             countText = "${appsForChar.size} apps",
                             isSingleApp = false,
-                            nextCharIndex = activeIndex + 1
+                            nextCharIndex = activeIndex + 1,
+                            chars = listOf(ch.uppercaseChar())
                         )
                     )
                 }
@@ -126,7 +128,8 @@ object GridPartition {
                                 rangeLabel = label,
                                 countText = "${appsInSlice.size} apps",
                                 isSingleApp = false,
-                                nextCharIndex = activeIndex + 1
+                                nextCharIndex = activeIndex + 1,
+                                chars = sliceChars.map { it.uppercaseChar() }
                             )
                         )
                     }

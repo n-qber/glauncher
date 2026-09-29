@@ -27,9 +27,7 @@ class MainActivity : AppCompatActivity() {
 
     private data class CircleViewHolder(
         val root: View,
-        val rangeContainer: View,
-        val rangeLabel: TextView,
-        val rangeCount: TextView,
+        val rangeView: CircularRangeView,
         val appContainer: View,
         val appIcon: ImageView,
         val appLabel: TextView
@@ -109,9 +107,7 @@ class MainActivity : AppCompatActivity() {
             circleHolders.add(
                 CircleViewHolder(
                     root = cellView,
-                    rangeContainer = cellView.findViewById(R.id.range_container),
-                    rangeLabel = cellView.findViewById(R.id.range_label),
-                    rangeCount = cellView.findViewById(R.id.range_count),
+                    rangeView = cellView.findViewById(R.id.circular_range_view),
                     appContainer = cellView.findViewById(R.id.app_container),
                     appIcon = cellView.findViewById(R.id.app_icon),
                     appLabel = cellView.findViewById(R.id.app_label)
@@ -215,7 +211,7 @@ class MainActivity : AppCompatActivity() {
                 if (bucket.isSingleApp) {
                     // Show single app icon & label (lazy load icon on demand without blocking UI thread)
                     val app = bucket.apps.first()
-                    holder.rangeContainer.visibility = View.GONE
+                    holder.rangeView.visibility = View.GONE
                     holder.appContainer.visibility = View.VISIBLE
                     holder.appLabel.text = app.label
 
@@ -240,11 +236,14 @@ class MainActivity : AppCompatActivity() {
                         launchApp(app)
                     }
                 } else {
-                    // Show range label & app count
+                    // Show circular letters & app count
                     holder.appContainer.visibility = View.GONE
-                    holder.rangeContainer.visibility = View.VISIBLE
-                    holder.rangeLabel.text = bucket.rangeLabel
-                    holder.rangeCount.text = bucket.countText
+                    holder.rangeView.visibility = View.VISIBLE
+                    holder.rangeView.setRange(
+                        characters = bucket.chars,
+                        count = bucket.countText,
+                        fallback = bucket.rangeLabel
+                    )
 
                     holder.root.setOnClickListener {
                         it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)

@@ -11,34 +11,12 @@
     android:focusable="true">
 
     <!-- Range view: shown when bucket contains multiple apps -->
-    <LinearLayout
-        android:id="@+id/range_container"
+    <br.com.nqber.glauncher.CircularRangeView
+        android:id="@+id/circular_range_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="6dp">
-
-        <TextView
-            android:id="@+id/range_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="@color/text_primary"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            tools:text="A – E" />
-
-        <TextView
-            android:id="@+id/range_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="@color/text_secondary"
-            android:textSize="11sp"
-            tools:text="14 apps" />
-
-    </LinearLayout>
+        android:clickable="false"
+        android:focusable="false" />
 
     <!-- App view: shown when bucket contains exactly 1 app -->
     <LinearLayout
