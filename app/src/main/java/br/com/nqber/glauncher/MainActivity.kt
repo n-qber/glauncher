@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
 
     private val history = mutableListOf<State>()
     private val circleHolders = mutableListOf<CircleViewHolder>()
+    private var shouldResetOnResume = false
 
     private lateinit var btnBack: ImageButton
     private lateinit var headerTitle: TextView
@@ -44,8 +45,8 @@ class MainActivity : AppCompatActivity() {
 
     private val packageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            AppRepository.invalidate()
-            resetToRoot()
+            AppRepository.invalidate(this@MainActivity)
+            resetToRoot(forceReload = true)
         }
     }
 
@@ -62,6 +63,20 @@ class MainActivity : AppCompatActivity() {
 
         // Background update check
         UpdateManager.checkForUpdates(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (shouldResetOnResume) {
+            shouldResetOnResume = false
+            resetToRoot()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        resetToRoot()
     }
 
     override fun onDestroy() {
@@ -126,14 +141,39 @@ class MainActivity : AppCompatActivity() {
         registerReceiver(packageReceiver, filter)
     }
 
-    private fun resetToRoot() {
+    private fun resetToRoot(forceReload: Boolean = false) {
+        if (!forceReload) {
+            val cached = AppRepository.getCachedApps()
+            if (cached != null) {
+                history.clear()
+                history.add(State(cached, "GLauncher", charIndex = 0))
+                renderCurrentState()
+                return
+            }
+        }
+
         lifecycleScope.launch {
             val allApps = withContext(Dispatchers.IO) {
-                AppRepository.getApps(this@MainActivity)
+                AppRepository.getApps(this@MainActivity, forceReload = forceReload)
             }
             history.clear()
             history.add(State(allApps, "GLauncher", charIndex = 0))
             renderCurrentState()
+
+            // Preload icons and verify background updates
+            withContext(Dispatchers.IO) {
+                AppRepository.preloadIcons(this@MainActivity, allApps.map { it.packageName })
+                val updatedApps = AppRepository.syncWithSystem(this@MainActivity)
+                if (updatedApps != null) {
+                    withContext(Dispatchers.Main) {
+                        if (history.size <= 1) {
+                            history.clear()
+                            history.add(State(updatedApps, "GLauncher", charIndex = 0))
+                            renderCurrentState()
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -173,12 +213,27 @@ class MainActivity : AppCompatActivity() {
                 holder.root.visibility = View.VISIBLE
 
                 if (bucket.isSingleApp) {
-                    // Show single app icon & label (lazy load icon on demand)
+                    // Show single app icon & label (lazy load icon on demand without blocking UI thread)
                     val app = bucket.apps.first()
                     holder.rangeContainer.visibility = View.GONE
                     holder.appContainer.visibility = View.VISIBLE
-                    holder.appIcon.setImageDrawable(AppRepository.getIcon(this, app.packageName))
                     holder.appLabel.text = app.label
+
+                    val cachedIcon = AppRepository.getCachedIcon(app.packageName)
+                    if (cachedIcon != null) {
+                        holder.appIcon.setImageDrawable(cachedIcon)
+                    } else {
+                        holder.appIcon.setImageDrawable(AppRepository.getDefaultIcon(this))
+                        holder.appIcon.tag = app.packageName
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            val icon = AppRepository.getIcon(this@MainActivity, app.packageName)
+                            withContext(Dispatchers.Main) {
+                                if (holder.appIcon.tag == app.packageName) {
+                                    holder.appIcon.setImageDrawable(icon)
+                                }
+                            }
+                        }
+                    }
 
                     holder.root.setOnClickListener {
                         it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -212,9 +267,9 @@ class MainActivity : AppCompatActivity() {
     private fun launchApp(app: AppInfo) {
         val launchIntent = packageManager.getLaunchIntentForPackage(app.packageName)
         if (launchIntent != null) {
+            shouldResetOnResume = true
             startActivity(launchIntent)
-            // Reset to root state for the next time the launcher is opened
-            resetToRoot()
         }
     }
 }
+

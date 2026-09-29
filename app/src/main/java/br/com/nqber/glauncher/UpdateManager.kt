@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -22,11 +23,30 @@ object UpdateManager {
 
     private const val GITHUB_REPO = "n-qber/glauncher"
     private const val RELEASES_API = "https://api.github.com/repos/$GITHUB_REPO/releases/latest"
+    private const val PREFS_NAME = "update_prefs"
+    private const val KEY_LAST_CHECK = "last_update_check"
+    private const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L // 24 hours
 
-    fun checkForUpdates(activity: AppCompatActivity) {
+    fun checkForUpdates(activity: AppCompatActivity, force: Boolean = false) {
         activity.lifecycleScope.launch {
             try {
+                if (!force) {
+                    val prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    val lastCheck = prefs.getLong(KEY_LAST_CHECK, 0L)
+                    val now = System.currentTimeMillis()
+                    if (now - lastCheck < CHECK_INTERVAL_MS) {
+                        return@launch
+                    }
+                }
+
+                // Delay check slightly to let launcher startup and animations finish completely
+                delay(3000)
+
                 val releaseInfo = withContext(Dispatchers.IO) { fetchLatestRelease() } ?: return@launch
+
+                val prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                prefs.edit().putLong(KEY_LAST_CHECK, System.currentTimeMillis()).apply()
+
                 val currentVersion = BuildConfig.VERSION_NAME.removePrefix("v").trim()
                 val latestVersion = releaseInfo.tagName.removePrefix("v").trim()
 
