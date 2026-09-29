@@ -22,6 +22,7 @@ pkgs.mkShell {
     androidSdk
     pkgs.jdk17
     pkgs.gradle
+    pkgs.gh
   ];
 
   shellHook = ''
