@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Rect
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.view.HapticFeedbackConstants
@@ -13,6 +12,7 @@ import android.view.OrientationEventListener
 import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -50,6 +50,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSettings: ImageButton
     private lateinit var btnUpdate: ImageButton
 
+    // Grid and Row containers
+    private lateinit var gridContainer: LinearLayout
+    private lateinit var row0: LinearLayout
+    private lateinit var row1: LinearLayout
+    private lateinit var row2: LinearLayout
+
     // Spacers for direct horizontal and vertical distance control
     private lateinit var spacerH0: View
     private lateinit var spacerH1: View
@@ -84,11 +90,6 @@ class MainActivity : AppCompatActivity() {
         setupNavigation()
         setupOrientationListener()
         registerPackageReceiver()
-
-        applyCircleSpacing(
-            LauncherSettings.getSpacingHorizontal(this),
-            LauncherSettings.getSpacingVertical(this)
-        )
 
         // Initial load
         resetToRoot()
@@ -180,11 +181,25 @@ class MainActivity : AppCompatActivity() {
         btnSettings = findViewById(R.id.btn_settings)
         btnUpdate = findViewById(R.id.btn_update)
 
+        gridContainer = findViewById(R.id.grid_container)
+        row0 = findViewById(R.id.row_0)
+        row1 = findViewById(R.id.row_1)
+        row2 = findViewById(R.id.row_2)
+
         spacerH0 = findViewById(R.id.spacer_h_0)
         spacerH1 = findViewById(R.id.spacer_h_1)
         spacerH2 = findViewById(R.id.spacer_h_2)
         spacerV0 = findViewById(R.id.spacer_v_0)
         spacerV1 = findViewById(R.id.spacer_v_1)
+
+        gridContainer.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            if ((right - left) != (oldRight - oldLeft) || (bottom - top) != (oldBottom - oldTop)) {
+                applyCircleSpacing(
+                    LauncherSettings.getSpacingHorizontal(this),
+                    LauncherSettings.getSpacingVertical(this)
+                )
+            }
+        }
 
         btnBack.setOnClickListener {
             goBack()
@@ -325,6 +340,32 @@ class MainActivity : AppCompatActivity() {
             lp.height = vPx
             spacer.layoutParams = lp
         }
+
+        val gridWidth = gridContainer.width
+        val gridHeight = gridContainer.height
+        if (gridWidth > 0 && gridHeight > 0) {
+            val paddingH = gridContainer.paddingLeft + gridContainer.paddingRight
+            val availableWidth = gridWidth - paddingH - hPx
+            val cellWidth = availableWidth / 2
+
+            val paddingV = gridContainer.paddingTop + gridContainer.paddingBottom
+            val availableHeight = gridHeight - paddingV - (2 * vPx)
+            val maxCellHeight = availableHeight / 3
+
+            val finalCellSize = minOf(cellWidth, maxCellHeight)
+
+            if (finalCellSize > 0) {
+                val rows = listOf(row0, row1, row2)
+                for (row in rows) {
+                    val lp = row.layoutParams as? LinearLayout.LayoutParams
+                    if (lp != null) {
+                        lp.height = finalCellSize
+                        lp.weight = 0f
+                        row.layoutParams = lp
+                    }
+                }
+            }
+        }
     }
 
     private fun applyCircleScale(scalePercent: Int) {
@@ -412,20 +453,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun findHolderUnderPoint(rawX: Float, rawY: Float): Int? {
-        val rect = Rect()
-        for (i in 0 until 6) {
-            val holder = circleHolders[i]
-            if (holder.root.visibility == View.VISIBLE) {
-                holder.root.getGlobalVisibleRect(rect)
-                if (rect.contains(rawX.toInt(), rawY.toInt())) {
-                    return i
-                }
-            }
-        }
-        return null
-    }
-
     private fun setupCircleTouchListener(holder: CircleViewHolder, index: Int) {
         holder.root.setOnTouchListener { v, event ->
             val baseScale = LauncherSettings.getCircleScale(this) / 100f
@@ -448,7 +475,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    // Maintain stable preview view without deselecting while finger is held down
+                    // Preview remains active without flickering while holding finger
                     true
                 }
 
@@ -457,24 +484,25 @@ class MainActivity : AppCompatActivity() {
                         h.root.animate().scaleX(baseScale).scaleY(baseScale).setDuration(80).start()
                     }
 
-                    val releaseIndex = findHolderUnderPoint(event.rawX, event.rawY)
+                    // Generous hit tolerance around the touched circle:
+                    val tolerance = 40f * resources.displayMetrics.density
+                    val isInside = event.x in -tolerance..(v.width + tolerance) &&
+                                   event.y in -tolerance..(v.height + tolerance)
+
                     val downBucket = touchedBucketAtDown
 
-                    if (releaseIndex == touchedIndexAtDown || releaseIndex != null) {
-                        // User released inside a circle
-                        if (downBucket != null) {
-                            v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                            if (downBucket.isSingleApp) {
-                                // Tapped on a single app -> launch it
-                                launchApp(downBucket.apps.first())
-                            } else {
-                                // Tapped on a range bucket -> commit the drill-down (shows children, never launches prematurely)
-                                val nextState = State(downBucket.apps, downBucket.rangeLabel, charIndex = downBucket.nextCharIndex)
-                                commitPreview(nextState)
-                            }
+                    if (isInside && downBucket != null) {
+                        v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        if (downBucket.isSingleApp) {
+                            // Tapped on a single app -> launch it
+                            launchApp(downBucket.apps.first())
+                        } else {
+                            // Tapped on a range bucket -> commit drilldown to show its children
+                            val nextState = State(downBucket.apps, downBucket.rangeLabel, charIndex = downBucket.nextCharIndex)
+                            commitPreview(nextState)
                         }
                     } else {
-                        // User intentionally dragged outside the circle area -> cancel preview
+                        // User slid far away to cancel
                         cancelPreview()
                     }
 
