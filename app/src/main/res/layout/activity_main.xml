@@ -68,18 +68,20 @@
 
     </LinearLayout>
 
-    <!-- 3 Rows x 2 Columns Grid of Circles -->
+    <!-- 3 Rows x 2 Columns Grid of Circles with adjustable Spacers -->
     <LinearLayout
         android:id="@+id/grid_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:paddingHorizontal="12dp"
-        android:paddingBottom="16dp">
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="20dp"
+        android:paddingTop="8dp">
 
         <!-- Row 1: Circles 0 and 1 -->
         <LinearLayout
+            android:id="@+id/row_0"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
@@ -98,6 +100,11 @@
 
             </FrameLayout>
 
+            <View
+                android:id="@+id/spacer_h_0"
+                android:layout_width="12dp"
+                android:layout_height="match_parent" />
+
             <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -112,8 +119,14 @@
 
         </LinearLayout>
 
+        <View
+            android:id="@+id/spacer_v_0"
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
         <!-- Row 2: Circles 2 and 3 -->
         <LinearLayout
+            android:id="@+id/row_1"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
@@ -132,6 +145,11 @@
 
             </FrameLayout>
 
+            <View
+                android:id="@+id/spacer_h_1"
+                android:layout_width="12dp"
+                android:layout_height="match_parent" />
+
             <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -146,8 +164,14 @@
 
         </LinearLayout>
 
+        <View
+            android:id="@+id/spacer_v_1"
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
         <!-- Row 3: Circles 4 and 5 -->
         <LinearLayout
+            android:id="@+id/row_2"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
@@ -165,6 +189,11 @@
                     layout="@layout/item_circle" />
 
             </FrameLayout>
+
+            <View
+                android:id="@+id/spacer_h_2"
+                android:layout_width="12dp"
+                android:layout_height="match_parent" />
 
             <FrameLayout
                 android:layout_width="0dp"

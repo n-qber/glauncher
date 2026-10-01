@@ -1,56 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/bg_dialog"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
 
-    <!-- Header: Title and Close button -->
+    <!-- Top Header Bar -->
     <LinearLayout
+        android:id="@+id/settings_header"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Configurações"
-            android:textColor="@color/text_primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+        android:paddingHorizontal="16dp">
 
         <ImageButton
-            android:id="@+id/btn_close_settings"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:id="@+id/btn_back_settings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Fechar"
-            android:padding="6dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_close" />
+            android:contentDescription="Voltar"
+            android:src="@drawable/ic_arrow_back" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="Configurações"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:overScrollMode="never"
         android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="32dp">
 
             <!-- Section 1: Tema -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:text="Tema"
                 android:textColor="@color/accent"
                 android:textSize="13sp"
@@ -66,7 +67,7 @@
                     android:id="@+id/radio_theme_system"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingVertical="4dp"
+                    android:paddingVertical="8dp"
                     android:text="Padrão do sistema"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
@@ -75,7 +76,7 @@
                     android:id="@+id/radio_theme_dark"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingVertical="4dp"
+                    android:paddingVertical="8dp"
                     android:text="Escuro"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
@@ -84,7 +85,7 @@
                     android:id="@+id/radio_theme_light"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingVertical="4dp"
+                    android:paddingVertical="8dp"
                     android:text="Claro"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
@@ -95,7 +96,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginVertical="14dp"
+                android:layout_marginVertical="16dp"
                 android:background="@color/dialog_stroke" />
 
             <!-- Section 2: Formato das letras -->
@@ -117,7 +118,7 @@
                     android:id="@+id/radio_layout_circular"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingVertical="4dp"
+                    android:paddingVertical="8dp"
                     android:text="Circular (padrão)"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
@@ -126,7 +127,7 @@
                     android:id="@+id/radio_layout_line"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingVertical="4dp"
+                    android:paddingVertical="8dp"
                     android:text="Linha (lado a lado, ex: DEFG)"
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
@@ -137,10 +138,65 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginVertical="14dp"
+                android:layout_marginVertical="16dp"
                 android:background="@color/dialog_stroke" />
 
-            <!-- Section 3: Espaçamento entre bolinhas -->
+            <!-- Section 3: Navegação por arraste -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Navegação"
+                android:textColor="@color/accent"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/drag_nav_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Selecionar por arraste"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Deslize o dedo entre as bolinhas para navegar e abrir apps sem soltar a tela."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_drag_navigation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp" />
+
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="16dp"
+                android:background="@color/dialog_stroke" />
+
+            <!-- Section 4: Espaçamento entre bolinhas -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -153,8 +209,8 @@
                 android:id="@+id/label_spacing_horizontal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="Horizontal: 10 dp"
+                android:layout_marginTop="12dp"
+                android:text="Espaçamento horizontal: 12 dp"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
@@ -162,16 +218,16 @@
                 android:id="@+id/seekbar_spacing_horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:max="16"
-                android:progress="10" />
+                android:layout_marginTop="6dp"
+                android:max="32"
+                android:progress="12" />
 
             <TextView
                 android:id="@+id/label_spacing_vertical"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="Vertical: 10 dp"
+                android:layout_marginTop="14dp"
+                android:text="Espaçamento vertical: 12 dp"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
@@ -179,18 +235,18 @@
                 android:id="@+id/seekbar_spacing_vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:max="16"
-                android:progress="10" />
+                android:layout_marginTop="6dp"
+                android:max="32"
+                android:progress="12" />
 
             <!-- Divider -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginVertical="14dp"
+                android:layout_marginVertical="16dp"
                 android:background="@color/dialog_stroke" />
 
-            <!-- Section 4: Atualizações -->
+            <!-- Section 5: Atualizações -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -200,10 +256,10 @@
                 android:textStyle="bold" />
 
             <Button
-                android:id="@+id/btn_check_updates_dialog"
+                android:id="@+id/btn_check_updates"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="12dp"
                 android:background="@drawable/bg_button_secondary"
                 android:text="Verificar atualizações"
                 android:textColor="@color/text_primary"
@@ -213,7 +269,7 @@
                 android:id="@+id/app_version_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="16dp"
                 android:gravity="center"
                 android:text="GLauncher"
                 android:textColor="@color/text_secondary"

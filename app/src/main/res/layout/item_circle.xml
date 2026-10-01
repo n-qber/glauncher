@@ -5,10 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_gravity="center"
-    android:layout_margin="10dp"
     android:background="@drawable/bg_circle_button"
-    android:clickable="true"
-    android:focusable="true">
+    android:clickable="false"
+    android:focusable="false">
 
     <!-- Range view: shown when bucket contains multiple apps -->
     <br.com.nqber.glauncher.CircularRangeView
@@ -25,13 +24,13 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="8dp"
+        android:padding="6dp"
         android:visibility="gone">
 
         <ImageView
             android:id="@+id/app_icon"
-            android:layout_width="46dp"
-            android:layout_height="46dp"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:contentDescription="@null"
             tools:src="@mipmap/ic_launcher" />
 

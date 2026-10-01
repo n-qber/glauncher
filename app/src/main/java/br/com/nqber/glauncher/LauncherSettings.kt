@@ -17,8 +17,9 @@ object LauncherSettings {
 
     private const val KEY_THEME = "theme_mode"
     private const val KEY_LETTER_LAYOUT = "letter_layout"
-    private const val KEY_MARGIN_HORIZONTAL = "margin_horizontal"
-    private const val KEY_MARGIN_VERTICAL = "margin_vertical"
+    private const val KEY_DRAG_NAVIGATION = "drag_navigation"
+    private const val KEY_SPACING_HORIZONTAL = "spacing_horizontal"
+    private const val KEY_SPACING_VERTICAL = "spacing_vertical"
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -50,19 +51,27 @@ object LauncherSettings {
         getPrefs(context).edit().putString(KEY_LETTER_LAYOUT, layout).apply()
     }
 
-    fun getMarginHorizontal(context: Context): Int {
-        return getPrefs(context).getInt(KEY_MARGIN_HORIZONTAL, 10)
+    fun isDragNavigationEnabled(context: Context): Boolean {
+        return getPrefs(context).getBoolean(KEY_DRAG_NAVIGATION, true)
     }
 
-    fun setMarginHorizontal(context: Context, marginDp: Int) {
-        getPrefs(context).edit().putInt(KEY_MARGIN_HORIZONTAL, marginDp).apply()
+    fun setDragNavigationEnabled(context: Context, enabled: Boolean) {
+        getPrefs(context).edit().putBoolean(KEY_DRAG_NAVIGATION, enabled).apply()
     }
 
-    fun getMarginVertical(context: Context): Int {
-        return getPrefs(context).getInt(KEY_MARGIN_VERTICAL, 10)
+    fun getSpacingHorizontal(context: Context): Int {
+        return getPrefs(context).getInt(KEY_SPACING_HORIZONTAL, 12)
     }
 
-    fun setMarginVertical(context: Context, marginDp: Int) {
-        getPrefs(context).edit().putInt(KEY_MARGIN_VERTICAL, marginDp).apply()
+    fun setSpacingHorizontal(context: Context, spacingDp: Int) {
+        getPrefs(context).edit().putInt(KEY_SPACING_HORIZONTAL, spacingDp).apply()
+    }
+
+    fun getSpacingVertical(context: Context): Int {
+        return getPrefs(context).getInt(KEY_SPACING_VERTICAL, 12)
+    }
+
+    fun setSpacingVertical(context: Context, spacingDp: Int) {
+        getPrefs(context).edit().putInt(KEY_SPACING_VERTICAL, spacingDp).apply()
     }
 }
