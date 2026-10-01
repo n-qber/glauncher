@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg_dark">#0E0F14</color>
-    <color name="circle_bg">#181A22</color>
-    <color name="circle_stroke">#2A2E3D</color>
-    <color name="circle_ripple">#353B50</color>
-    <color name="text_primary">#F2F4F8</color>
-    <color name="text_secondary">#8C93A4</color>
-    <color name="accent">#4D72FE</color>
+    <color name="bg_dark">#F4F5F7</color>
+    <color name="circle_bg">#FFFFFF</color>
+    <color name="circle_stroke">#D5D9E2</color>
+    <color name="circle_ripple">#E4E7ED</color>
+    <color name="text_primary">#111827</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="accent">#3B5BDB</color>
+    <color name="dialog_bg">#FFFFFF</color>
+    <color name="dialog_stroke">#E5E7EB</color>
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
 </resources>

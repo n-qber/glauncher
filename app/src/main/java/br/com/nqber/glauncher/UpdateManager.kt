@@ -27,7 +27,10 @@ object UpdateManager {
     private const val KEY_LAST_CHECK = "last_update_check"
     private const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L // 24 hours
 
-    fun checkForUpdates(activity: AppCompatActivity, force: Boolean = false) {
+    fun checkForUpdates(activity: AppCompatActivity, force: Boolean = false, manual: Boolean = false) {
+        if (manual) {
+            Toast.makeText(activity, "Verificando atualizações...", Toast.LENGTH_SHORT).show()
+        }
         activity.lifecycleScope.launch {
             try {
                 if (!force) {
@@ -39,10 +42,18 @@ object UpdateManager {
                     }
                 }
 
-                // Delay check slightly to let launcher startup and animations finish completely
-                delay(3000)
+                if (!manual) {
+                    // Delay check slightly to let launcher startup and animations finish completely
+                    delay(3000)
+                }
 
-                val releaseInfo = withContext(Dispatchers.IO) { fetchLatestRelease() } ?: return@launch
+                val releaseInfo = withContext(Dispatchers.IO) { fetchLatestRelease() }
+                if (releaseInfo == null) {
+                    if (manual) {
+                        Toast.makeText(activity, "Não foi possível verificar atualizações.", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
 
                 val prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 prefs.edit().putLong(KEY_LAST_CHECK, System.currentTimeMillis()).apply()
@@ -52,28 +63,32 @@ object UpdateManager {
 
                 if (isNewer(latestVersion, currentVersion)) {
                     promptUpdate(activity, releaseInfo)
+                } else if (manual) {
+                    Toast.makeText(activity, "GLauncher já está atualizado (v$currentVersion)", Toast.LENGTH_SHORT).show()
                 }
-            } catch (_: Exception) {
-                // Ignore network errors or if rate-limited; do not interrupt the launcher
+            } catch (e: Exception) {
+                if (manual) {
+                    Toast.makeText(activity, "Erro ao verificar: ${e.localizedMessage ?: "Falha na conexão"}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
 
     private fun promptUpdate(activity: AppCompatActivity, release: ReleaseInfo) {
         AlertDialog.Builder(activity)
-            .setTitle("Update Available")
-            .setMessage("Version ${release.tagName} is available. Would you like to update?")
-            .setPositiveButton("Update") { _, _ ->
+            .setTitle("Atualização disponível")
+            .setMessage("Versão ${release.tagName} disponível. Deseja atualizar agora?")
+            .setPositiveButton("Atualizar") { _, _ ->
                 startDownload(activity, release.apkUrl, release.tagName)
             }
-            .setNegativeButton("Later", null)
+            .setNegativeButton("Depois", null)
             .show()
     }
 
     private fun startDownload(activity: AppCompatActivity, apkUrl: String, version: String) {
         val progressDialog = AlertDialog.Builder(activity)
-            .setTitle("Downloading update...")
-            .setMessage("Please wait while version $version is downloading.")
+            .setTitle("Baixando atualização...")
+            .setMessage("Aguarde enquanto a versão $version é baixada.")
             .setCancelable(false)
             .create()
 
@@ -88,7 +103,7 @@ object UpdateManager {
                 installApk(activity, apkFile)
             } catch (e: Exception) {
                 progressDialog.dismiss()
-                Toast.makeText(activity, "Download failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, "Download falhou: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -130,7 +145,7 @@ object UpdateManager {
     private fun installApk(activity: AppCompatActivity, apkFile: File) {
         // Request install permission on Android 8.0+ if not granted
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !activity.packageManager.canRequestPackageInstalls()) {
-            Toast.makeText(activity, "Please allow installing updates for GLauncher", Toast.LENGTH_LONG).show()
+            Toast.makeText(activity, "Por favor, autorize instalar atualizações para o GLauncher", Toast.LENGTH_LONG).show()
             val permissionIntent = Intent(
                 Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                 Uri.parse("package:${activity.packageName}")

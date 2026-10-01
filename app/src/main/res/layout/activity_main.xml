@@ -28,7 +28,7 @@
             android:id="@+id/header_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
@@ -41,14 +41,36 @@
             android:id="@+id/total_apps_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
             android:textColor="@color/text_secondary"
             android:textSize="13sp"
             tools:text="48 apps" />
+
+        <ImageButton
+            android:id="@+id/btn_update"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Verificar atualizações"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_update" />
+
+        <ImageButton
+            android:id="@+id/btn_settings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Configurações"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_settings" />
 
     </LinearLayout>
 
     <!-- 3 Rows x 2 Columns Grid of Circles -->
     <LinearLayout
+        android:id="@+id/grid_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
