@@ -10,7 +10,6 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.WindowCompat
 
 class SettingsActivity : AppCompatActivity() {
@@ -26,7 +25,7 @@ class SettingsActivity : AppCompatActivity() {
         setupHeader()
         setupThemeSection()
         setupLetterLayoutSection()
-        setupDragNavigationSection()
+        setupCircleSizeSection()
         setupSpacingSection()
         setupUpdatesSection()
     }
@@ -103,16 +102,26 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupDragNavigationSection() {
-        val switchDrag = findViewById<SwitchCompat>(R.id.switch_drag_navigation)
-        switchDrag.isChecked = LauncherSettings.isDragNavigationEnabled(this)
-        switchDrag.setOnCheckedChangeListener { _, isChecked ->
-            LauncherSettings.setDragNavigationEnabled(this, isChecked)
-        }
+    private fun setupCircleSizeSection() {
+        val labelSize = findViewById<TextView>(R.id.label_circle_size)
+        val seekbarSize = findViewById<SeekBar>(R.id.seekbar_circle_size)
 
-        findViewById<android.view.View>(R.id.drag_nav_container).setOnClickListener {
-            switchDrag.toggle()
-        }
+        val currentScale = LauncherSettings.getCircleScale(this)
+        labelSize.text = "Tamanho: $currentScale%"
+        seekbarSize.progress = currentScale - 60
+
+        seekbarSize.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val scale = progress + 60
+                labelSize.text = "Tamanho: $scale%"
+                if (fromUser) {
+                    LauncherSettings.setCircleScale(this@SettingsActivity, scale)
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
     }
 
     private fun setupSpacingSection() {

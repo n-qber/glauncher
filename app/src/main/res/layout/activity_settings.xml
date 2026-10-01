@@ -141,53 +141,31 @@
                 android:layout_marginVertical="16dp"
                 android:background="@color/dialog_stroke" />
 
-            <!-- Section 3: Navegação por arraste -->
+            <!-- Section 3: Tamanho das bolinhas -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Navegação"
+                android:text="Tamanho das bolinhas"
                 android:textColor="@color/accent"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
-            <LinearLayout
-                android:id="@+id/drag_nav_container"
+            <TextView
+                android:id="@+id/label_circle_size"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Tamanho: 100%"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp" />
+
+            <SeekBar
+                android:id="@+id/seekbar_circle_size"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Selecionar por arraste"
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="Deslize o dedo entre as bolinhas para navegar e abrir apps sem soltar a tela."
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
-
-                </LinearLayout>
-
-                <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/switch_drag_navigation"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp" />
-
-            </LinearLayout>
+                android:layout_marginTop="6dp"
+                android:max="40"
+                android:progress="40" />
 
             <!-- Divider -->
             <View

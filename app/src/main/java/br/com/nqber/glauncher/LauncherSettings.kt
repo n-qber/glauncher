@@ -17,7 +17,7 @@ object LauncherSettings {
 
     private const val KEY_THEME = "theme_mode"
     private const val KEY_LETTER_LAYOUT = "letter_layout"
-    private const val KEY_DRAG_NAVIGATION = "drag_navigation"
+    private const val KEY_CIRCLE_SCALE = "circle_scale"
     private const val KEY_SPACING_HORIZONTAL = "spacing_horizontal"
     private const val KEY_SPACING_VERTICAL = "spacing_vertical"
 
@@ -51,12 +51,12 @@ object LauncherSettings {
         getPrefs(context).edit().putString(KEY_LETTER_LAYOUT, layout).apply()
     }
 
-    fun isDragNavigationEnabled(context: Context): Boolean {
-        return getPrefs(context).getBoolean(KEY_DRAG_NAVIGATION, true)
+    fun getCircleScale(context: Context): Int {
+        return getPrefs(context).getInt(KEY_CIRCLE_SCALE, 100)
     }
 
-    fun setDragNavigationEnabled(context: Context, enabled: Boolean) {
-        getPrefs(context).edit().putBoolean(KEY_DRAG_NAVIGATION, enabled).apply()
+    fun setCircleScale(context: Context, scalePercent: Int) {
+        getPrefs(context).edit().putInt(KEY_CIRCLE_SCALE, scalePercent).apply()
     }
 
     fun getSpacingHorizontal(context: Context): Int {

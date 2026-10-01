@@ -21,7 +21,6 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.hypot
 
 class MainActivity : AppCompatActivity() {
 
@@ -62,12 +61,9 @@ class MainActivity : AppCompatActivity() {
     private var currentRotationAngle = 0f
     private lateinit var orientationListener: OrientationEventListener
 
-    // Drag navigation state
-    private var isGestureActive = false
-    private var lastDrilledIndex = -1
-    private var startRawX = 0f
-    private var startRawY = 0f
-    private var hasMovedSignificantDistance = false
+    // Touch gesture tracking
+    private var touchedBucketAtDown: GridBucket? = null
+    private var touchedIndexAtDown: Int = -1
 
     private val packageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -105,11 +101,12 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         orientationListener.enable()
 
-        // Apply updated settings that may have changed in SettingsActivity
+        // Apply updated settings from SettingsActivity
         applyCircleSpacing(
             LauncherSettings.getSpacingHorizontal(this),
             LauncherSettings.getSpacingVertical(this)
         )
+        applyCircleScale(LauncherSettings.getCircleScale(this))
 
         if (shouldResetOnResume) {
             shouldResetOnResume = false
@@ -330,6 +327,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyCircleScale(scalePercent: Int) {
+        val scale = scalePercent / 100f
+        for (holder in circleHolders) {
+            holder.root.scaleX = scale
+            holder.root.scaleY = scale
+        }
+    }
+
     private fun renderCurrentState() {
         val currentState = history.lastOrNull() ?: return
         val candidates = currentState.candidates
@@ -353,15 +358,16 @@ class MainActivity : AppCompatActivity() {
         val buckets = GridPartition.partition(candidates, currentState.charIndex)
         currentVisibleBuckets = buckets
 
+        val baseScale = LauncherSettings.getCircleScale(this) / 100f
+
         for (i in 0 until 6) {
             val holder = circleHolders[i]
             val bucket = buckets.getOrNull(i)
 
-            // Maintain rotation
             holder.rangeView.rotation = currentRotationAngle
             holder.appContainer.rotation = currentRotationAngle
-            holder.root.scaleX = 1f
-            holder.root.scaleY = 1f
+            holder.root.scaleX = baseScale
+            holder.root.scaleY = baseScale
 
             if (bucket == null) {
                 holder.root.visibility = View.INVISIBLE
@@ -421,129 +427,69 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupCircleTouchListener(holder: CircleViewHolder, index: Int) {
-        val touchSlop = 20 * resources.displayMetrics.density
-
         holder.root.setOnTouchListener { v, event ->
-            val isDragNav = LauncherSettings.isDragNavigationEnabled(this)
+            val baseScale = LauncherSettings.getCircleScale(this) / 100f
+            val pressScale = baseScale * 0.92f
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    isGestureActive = true
-                    lastDrilledIndex = index
-                    startRawX = event.rawX
-                    startRawY = event.rawY
-                    hasMovedSignificantDistance = false
+                    touchedIndexAtDown = index
+                    touchedBucketAtDown = currentVisibleBuckets.getOrNull(index)
 
                     v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    v.animate().scaleX(pressScale).scaleY(pressScale).setDuration(80).start()
 
-                    val bucket = currentVisibleBuckets.getOrNull(index)
-                    if (bucket != null) {
-                        if (bucket.isSingleApp) {
-                            v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(80).start()
-                        } else {
-                            val nextState = State(bucket.apps, bucket.rangeLabel, charIndex = bucket.nextCharIndex)
-                            showPreview(nextState)
-                        }
+                    val bucket = touchedBucketAtDown
+                    if (bucket != null && !bucket.isSingleApp) {
+                        val nextState = State(bucket.apps, bucket.rangeLabel, charIndex = bucket.nextCharIndex)
+                        showPreview(nextState)
                     }
                     true
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    val dist = hypot((event.rawX - startRawX).toDouble(), (event.rawY - startRawY).toDouble()).toFloat()
-                    if (dist > touchSlop) {
-                        hasMovedSignificantDistance = true
-                    }
-
-                    if (isDragNav && hasMovedSignificantDistance) {
-                        // Check if dragging over btnBack
-                        val backRect = Rect()
-                        btnBack.getGlobalVisibleRect(backRect)
-                        if (btnBack.visibility == View.VISIBLE && backRect.contains(event.rawX.toInt(), event.rawY.toInt())) {
-                            if (history.size > 1) {
-                                btnBack.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                goBack()
-                                lastDrilledIndex = -1
-                            }
-                        }
-
-                        // Check if entering a circle on screen
-                        val hoveredIndex = findHolderUnderPoint(event.rawX, event.rawY)
-                        if (hoveredIndex != null && hoveredIndex != lastDrilledIndex) {
-                            val targetBucket = currentVisibleBuckets.getOrNull(hoveredIndex)
-                            if (targetBucket != null) {
-                                lastDrilledIndex = hoveredIndex
-                                circleHolders[hoveredIndex].root.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-
-                                if (targetBucket.isSingleApp) {
-                                    // Highlight single app
-                                    for (j in 0 until 6) {
-                                        circleHolders[j].root.animate().scaleX(if (j == hoveredIndex) 0.92f else 1f)
-                                            .scaleY(if (j == hoveredIndex) 0.92f else 1f).setDuration(80).start()
-                                    }
-                                } else {
-                                    // Drill down to that bucket
-                                    val nextState = State(targetBucket.apps, targetBucket.rangeLabel, charIndex = targetBucket.nextCharIndex)
-                                    showPreview(nextState)
-                                }
-                            }
-                        }
-                    }
+                    // Maintain stable preview view without deselecting while finger is held down
                     true
                 }
 
                 MotionEvent.ACTION_UP -> {
                     for (h in circleHolders) {
-                        h.root.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+                        h.root.animate().scaleX(baseScale).scaleY(baseScale).setDuration(80).start()
                     }
 
                     val releaseIndex = findHolderUnderPoint(event.rawX, event.rawY)
+                    val downBucket = touchedBucketAtDown
 
-                    if (isDragNav) {
-                        if (releaseIndex != null) {
-                            val bucket = currentVisibleBuckets.getOrNull(releaseIndex)
-                            if (bucket != null) {
-                                v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                if (bucket.isSingleApp) {
-                                    launchApp(bucket.apps.first())
-                                } else {
-                                    val nextState = State(bucket.apps, bucket.rangeLabel, charIndex = bucket.nextCharIndex)
-                                    commitPreview(nextState)
-                                }
+                    if (releaseIndex == touchedIndexAtDown || releaseIndex != null) {
+                        // User released inside a circle
+                        if (downBucket != null) {
+                            v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            if (downBucket.isSingleApp) {
+                                // Tapped on a single app -> launch it
+                                launchApp(downBucket.apps.first())
                             } else {
-                                if (isPreviewActive) commitCurrentPreview()
+                                // Tapped on a range bucket -> commit the drill-down (shows children, never launches prematurely)
+                                val nextState = State(downBucket.apps, downBucket.rangeLabel, charIndex = downBucket.nextCharIndex)
+                                commitPreview(nextState)
                             }
-                        } else {
-                            // Released outside: keep visualization active and commit current state
-                            if (isPreviewActive) commitCurrentPreview()
                         }
                     } else {
-                        // Standard mode without drag nav
-                        if (releaseIndex == index || !hasMovedSignificantDistance) {
-                            val bucket = currentVisibleBuckets.getOrNull(index)
-                            if (bucket != null) {
-                                v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                if (bucket.isSingleApp) {
-                                    launchApp(bucket.apps.first())
-                                } else {
-                                    val nextState = State(bucket.apps, bucket.rangeLabel, charIndex = bucket.nextCharIndex)
-                                    commitPreview(nextState)
-                                }
-                            }
-                        } else {
-                            cancelPreview()
-                        }
+                        // User intentionally dragged outside the circle area -> cancel preview
+                        cancelPreview()
                     }
 
-                    isGestureActive = false
+                    touchedBucketAtDown = null
+                    touchedIndexAtDown = -1
                     true
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
                     for (h in circleHolders) {
-                        h.root.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+                        h.root.animate().scaleX(baseScale).scaleY(baseScale).setDuration(80).start()
                     }
                     cancelPreview()
-                    isGestureActive = false
+                    touchedBucketAtDown = null
+                    touchedIndexAtDown = -1
                     true
                 }
 
@@ -552,11 +498,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private var pendingPreviewState: State? = null
-
     private fun showPreview(previewState: State) {
         isPreviewActive = true
-        pendingPreviewState = previewState
 
         val prospectivePath = (history.drop(1).map { it.title } + previewState.title).joinToString(" › ")
         headerTitle.text = prospectivePath
@@ -572,12 +515,16 @@ class MainActivity : AppCompatActivity() {
             CircularRangeView.LetterLayout.CIRCULAR
         }
 
+        val baseScale = LauncherSettings.getCircleScale(this) / 100f
+
         for (i in 0 until 6) {
             val holder = circleHolders[i]
             val bucket = previewBuckets.getOrNull(i)
 
             holder.rangeView.rotation = currentRotationAngle
             holder.appContainer.rotation = currentRotationAngle
+            holder.root.scaleX = baseScale
+            holder.root.scaleY = baseScale
 
             if (bucket == null) {
                 holder.root.visibility = View.INVISIBLE
@@ -620,24 +567,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun commitPreview(nextState: State) {
         isPreviewActive = false
-        pendingPreviewState = null
         history.add(nextState)
         renderCurrentState()
-    }
-
-    private fun commitCurrentPreview() {
-        val state = pendingPreviewState
-        if (state != null) {
-            commitPreview(state)
-        } else {
-            renderCurrentState()
-        }
     }
 
     private fun cancelPreview() {
         if (!isPreviewActive) return
         isPreviewActive = false
-        pendingPreviewState = null
         renderCurrentState()
     }
 
