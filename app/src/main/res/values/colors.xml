@@ -9,6 +9,8 @@
     <color name="accent">#3B5BDB</color>
     <color name="dialog_bg">#FFFFFF</color>
     <color name="dialog_stroke">#E5E7EB</color>
+    <color name="danger">#DC2626</color>
+    <color name="danger_ripple">#20DC2626</color>
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
 </resources>

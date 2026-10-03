@@ -1,19 +1,29 @@
 package br.com.nqber.glauncher
 
+import android.app.Dialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.hardware.SensorManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.View
+import android.view.ViewConfiguration
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
@@ -43,6 +53,14 @@ class MainActivity : AppCompatActivity() {
     private var currentVisibleBuckets = listOf<GridBucket?>()
     private var shouldResetOnResume = false
     private var isPreviewActive = false
+
+    // Long-press and options dialog for single app
+    private val longPressHandler = Handler(Looper.getMainLooper())
+    private var longPressRunnable: Runnable? = null
+    private var isLongPressTriggered = false
+    private var touchDownRawX = 0f
+    private var touchDownRawY = 0f
+    private var activeAppDialog: Dialog? = null
 
     private lateinit var btnBack: ImageButton
     private lateinit var headerTitle: TextView
@@ -120,6 +138,7 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         orientationListener.disable()
+        cancelLongPress()
         if (isPreviewActive) {
             cancelPreview()
         }
@@ -133,6 +152,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        cancelLongPress()
+        activeAppDialog?.dismiss()
+        activeAppDialog = null
         unregisterReceiver(packageReceiver)
     }
 
@@ -453,6 +475,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun cancelLongPress() {
+        longPressRunnable?.let {
+            longPressHandler.removeCallbacks(it)
+            longPressRunnable = null
+        }
+    }
+
     private fun setupCircleTouchListener(holder: CircleViewHolder, index: Int) {
         holder.root.setOnTouchListener { v, event ->
             val baseScale = LauncherSettings.getCircleScale(this) / 100f
@@ -460,28 +489,61 @@ class MainActivity : AppCompatActivity() {
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    cancelLongPress()
+                    isLongPressTriggered = false
                     touchedIndexAtDown = index
                     touchedBucketAtDown = currentVisibleBuckets.getOrNull(index)
+                    touchDownRawX = event.rawX
+                    touchDownRawY = event.rawY
 
                     v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     v.animate().scaleX(pressScale).scaleY(pressScale).setDuration(80).start()
 
                     val bucket = touchedBucketAtDown
-                    if (bucket != null && !bucket.isSingleApp) {
-                        val nextState = State(bucket.apps, bucket.rangeLabel, charIndex = bucket.nextCharIndex)
-                        showPreview(nextState)
+                    if (bucket != null) {
+                        if (bucket.isSingleApp) {
+                            val app = bucket.apps.first()
+                            val runnable = Runnable {
+                                isLongPressTriggered = true
+                                longPressRunnable = null
+                                v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                v.animate().scaleX(baseScale).scaleY(baseScale).setDuration(80).start()
+                                showAppOptionsDialog(app)
+                            }
+                            longPressRunnable = runnable
+                            longPressHandler.postDelayed(runnable, ViewConfiguration.getLongPressTimeout().toLong())
+                        } else {
+                            val nextState = State(bucket.apps, bucket.rangeLabel, charIndex = bucket.nextCharIndex)
+                            showPreview(nextState)
+                        }
                     }
                     true
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    // Preview remains active without flickering while holding finger
+                    if (longPressRunnable != null) {
+                        val touchSlop = ViewConfiguration.get(this).scaledTouchSlop
+                        val dx = kotlin.math.abs(event.rawX - touchDownRawX)
+                        val dy = kotlin.math.abs(event.rawY - touchDownRawY)
+                        if (dx > touchSlop || dy > touchSlop) {
+                            cancelLongPress()
+                        }
+                    }
                     true
                 }
 
                 MotionEvent.ACTION_UP -> {
+                    cancelLongPress()
+
                     for (h in circleHolders) {
                         h.root.animate().scaleX(baseScale).scaleY(baseScale).setDuration(80).start()
+                    }
+
+                    if (isLongPressTriggered) {
+                        isLongPressTriggered = false
+                        touchedBucketAtDown = null
+                        touchedIndexAtDown = -1
+                        return@setOnTouchListener true
                     }
 
                     // Generous hit tolerance around the touched circle:
@@ -512,6 +574,8 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
+                    cancelLongPress()
+                    isLongPressTriggered = false
                     for (h in circleHolders) {
                         h.root.animate().scaleX(baseScale).scaleY(baseScale).setDuration(80).start()
                     }
@@ -610,6 +674,122 @@ class MainActivity : AppCompatActivity() {
         if (launchIntent != null) {
             shouldResetOnResume = true
             startActivity(launchIntent)
+        }
+    }
+
+    private fun showAppOptionsDialog(app: AppInfo) {
+        if (isFinishing || isDestroyed) return
+
+        activeAppDialog?.dismiss()
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_app_options, null)
+        val appIconView = dialogView.findViewById<ImageView>(R.id.dialog_app_icon)
+        val appLabelView = dialogView.findViewById<TextView>(R.id.dialog_app_label)
+        val appPackageView = dialogView.findViewById<TextView>(R.id.dialog_app_package)
+        val actionAppInfo = dialogView.findViewById<View>(R.id.action_app_info)
+        val actionUninstall = dialogView.findViewById<View>(R.id.action_uninstall)
+        val uninstallSubtitle = dialogView.findViewById<TextView>(R.id.dialog_uninstall_subtitle)
+
+        appLabelView.text = app.label
+
+        val versionName = try {
+            val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getPackageInfo(app.packageName, PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(app.packageName, 0)
+            }
+            pInfo.versionName
+        } catch (e: Exception) {
+            null
+        }
+
+        appPackageView.text = if (!versionName.isNullOrEmpty()) {
+            "${app.packageName} • v$versionName"
+        } else {
+            app.packageName
+        }
+
+        val isSystem = isSystemApp(app.packageName)
+        if (isSystem) {
+            uninstallSubtitle.visibility = View.VISIBLE
+        } else {
+            uninstallSubtitle.visibility = View.GONE
+        }
+
+        val cachedIcon = AppRepository.getCachedIcon(app.packageName)
+        if (cachedIcon != null) {
+            appIconView.setImageDrawable(cachedIcon)
+        } else {
+            appIconView.setImageDrawable(AppRepository.getDefaultIcon(this))
+            lifecycleScope.launch(Dispatchers.IO) {
+                val icon = AppRepository.getIcon(this@MainActivity, app.packageName)
+                withContext(Dispatchers.Main) {
+                    appIconView.setImageDrawable(icon)
+                }
+            }
+        }
+
+        val dialog = Dialog(this, R.style.Theme_Glauncher_Dialog).apply {
+            setContentView(dialogView)
+            setCanceledOnTouchOutside(true)
+            window?.let { win ->
+                win.setBackgroundDrawableResource(android.R.color.transparent)
+                val lp = win.attributes
+                val maxDialogWidth = (400 * resources.displayMetrics.density).toInt()
+                val targetWidth = (resources.displayMetrics.widthPixels * 0.88f).toInt()
+                lp.width = minOf(targetWidth, maxDialogWidth)
+                win.attributes = lp
+            }
+        }
+
+        actionAppInfo.setOnClickListener {
+            dialog.dismiss()
+            openAppInfo(app.packageName)
+        }
+
+        actionUninstall.setOnClickListener {
+            dialog.dismiss()
+            requestUninstall(app.packageName)
+        }
+
+        activeAppDialog = dialog
+        dialog.show()
+    }
+
+    private fun isSystemApp(packageName: String): Boolean {
+        return try {
+            val appInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getApplicationInfo(packageName, 0)
+            }
+            (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun openAppInfo(packageName: String) {
+        try {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, getString(R.string.error_open_app_info), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun requestUninstall(packageName: String) {
+        try {
+            val intent = Intent(Intent.ACTION_DELETE).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, getString(R.string.error_uninstall), Toast.LENGTH_SHORT).show()
         }
     }
 }

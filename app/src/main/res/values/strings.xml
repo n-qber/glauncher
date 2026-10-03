@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">GLauncher</string>
+    <string name="dialog_app_info">Informações do app</string>
+    <string name="dialog_uninstall">Desinstalar</string>
+    <string name="dialog_system_app">Aplicativo do sistema</string>
+    <string name="error_open_app_info">Não foi possível abrir as configurações do app.</string>
+    <string name="error_uninstall">Não foi possível solicitar a desinstalação deste aplicativo.</string>
 </resources>
