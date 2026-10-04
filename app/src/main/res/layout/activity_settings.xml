@@ -132,6 +132,15 @@
                     android:textColor="@color/text_primary"
                     android:textSize="15sp" />
 
+                <RadioButton
+                    android:id="@+id/radio_layout_none"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="8dp"
+                    android:text="Invisível (sem texto)"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp" />
+
             </RadioGroup>
 
             <!-- Divider -->

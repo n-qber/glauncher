@@ -19,6 +19,7 @@ import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.animation.DecelerateInterpolator
 import android.util.TypedValue
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -179,9 +180,14 @@ class MainActivity : AppCompatActivity() {
                     else -> 0f
                 }
 
-                if (targetAngle != currentRotationAngle) {
-                    currentRotationAngle = targetAngle
-                    applyContentRotation(targetAngle)
+                // Compute shortest angular delta between current rotation and target
+                val currentNorm = ((currentRotationAngle % 360f) + 360f) % 360f
+                var diff = (((targetAngle - currentNorm + 180f) % 360f + 360f) % 360f) - 180f
+                if (diff <= -180f) diff = 180f
+
+                if (kotlin.math.abs(diff) > 0.5f) {
+                    currentRotationAngle += diff
+                    applyContentRotation(currentRotationAngle)
                 }
             }
         }
@@ -189,8 +195,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyContentRotation(angle: Float) {
         for (holder in circleHolders) {
-            holder.rangeView.animate().rotation(angle).setDuration(250).start()
-            holder.appContainer.animate().rotation(angle).setDuration(250).start()
+            holder.rangeView.animate().rotation(angle).setDuration(220).setInterpolator(DecelerateInterpolator()).start()
+            holder.appContainer.animate().rotation(angle).setDuration(220).setInterpolator(DecelerateInterpolator()).start()
         }
     }
 
@@ -445,16 +451,14 @@ class MainActivity : AppCompatActivity() {
         }
         totalAppsCount.text = "${candidates.size} apps"
 
-        val layoutMode = if (LauncherSettings.getLetterLayout(this) == LauncherSettings.LAYOUT_LINE) {
-            CircularRangeView.LetterLayout.LINE
-        } else {
-            CircularRangeView.LetterLayout.CIRCULAR
+        val layoutMode = when (LauncherSettings.getLetterLayout(this)) {
+            LauncherSettings.LAYOUT_LINE -> CircularRangeView.LetterLayout.LINE
+            LauncherSettings.LAYOUT_NONE -> CircularRangeView.LetterLayout.NONE
+            else -> CircularRangeView.LetterLayout.CIRCULAR
         }
 
         val buckets = GridPartition.partition(candidates, currentState.charIndex)
         currentVisibleBuckets = buckets
-
-        val baseScale = LauncherSettings.getCircleScale(this) / 100f
 
         for (i in 0 until 6) {
             val holder = circleHolders[i]
@@ -462,8 +466,8 @@ class MainActivity : AppCompatActivity() {
 
             holder.rangeView.rotation = currentRotationAngle
             holder.appContainer.rotation = currentRotationAngle
-            holder.root.scaleX = baseScale
-            holder.root.scaleY = baseScale
+            holder.root.scaleX = 1f
+            holder.root.scaleY = 1f
 
             if (bucket == null) {
                 holder.root.visibility = View.INVISIBLE
@@ -633,10 +637,10 @@ class MainActivity : AppCompatActivity() {
         val previewBuckets = GridPartition.partition(previewState.candidates, previewState.charIndex)
         currentVisibleBuckets = previewBuckets
 
-        val layoutMode = if (LauncherSettings.getLetterLayout(this) == LauncherSettings.LAYOUT_LINE) {
-            CircularRangeView.LetterLayout.LINE
-        } else {
-            CircularRangeView.LetterLayout.CIRCULAR
+        val layoutMode = when (LauncherSettings.getLetterLayout(this)) {
+            LauncherSettings.LAYOUT_LINE -> CircularRangeView.LetterLayout.LINE
+            LauncherSettings.LAYOUT_NONE -> CircularRangeView.LetterLayout.NONE
+            else -> CircularRangeView.LetterLayout.CIRCULAR
         }
 
         for (i in 0 until 6) {

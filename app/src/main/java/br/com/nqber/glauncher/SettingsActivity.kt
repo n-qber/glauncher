@@ -85,17 +85,19 @@ class SettingsActivity : AppCompatActivity() {
         val currentLayout = LauncherSettings.getLetterLayout(this)
         val radioCircular = findViewById<RadioButton>(R.id.radio_layout_circular)
         val radioLine = findViewById<RadioButton>(R.id.radio_layout_line)
+        val radioNone = findViewById<RadioButton>(R.id.radio_layout_none)
 
-        if (currentLayout == LauncherSettings.LAYOUT_LINE) {
-            radioLine.isChecked = true
-        } else {
-            radioCircular.isChecked = true
+        when (currentLayout) {
+            LauncherSettings.LAYOUT_LINE -> radioLine.isChecked = true
+            LauncherSettings.LAYOUT_NONE -> radioNone.isChecked = true
+            else -> radioCircular.isChecked = true
         }
 
         val layoutGroup = findViewById<RadioGroup>(R.id.layout_radio_group)
         layoutGroup.setOnCheckedChangeListener { _, checkedId ->
             val newLayout = when (checkedId) {
                 R.id.radio_layout_line -> LauncherSettings.LAYOUT_LINE
+                R.id.radio_layout_none -> LauncherSettings.LAYOUT_NONE
                 else -> LauncherSettings.LAYOUT_CIRCULAR
             }
             LauncherSettings.setLetterLayout(this, newLayout)

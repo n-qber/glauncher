@@ -20,7 +20,8 @@ class CircularRangeView @JvmOverloads constructor(
 
     enum class LetterLayout {
         CIRCULAR,
-        LINE
+        LINE,
+        NONE
     }
 
     private var chars: List<Char> = emptyList()
@@ -73,6 +74,7 @@ class CircularRangeView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        if (letterLayout == LetterLayout.NONE) return
 
         val w = width.toFloat()
         val h = height.toFloat()

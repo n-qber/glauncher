@@ -14,6 +14,7 @@ object LauncherSettings {
 
     const val LAYOUT_CIRCULAR = "circular"
     const val LAYOUT_LINE = "line"
+    const val LAYOUT_NONE = "none"
 
     private const val KEY_THEME = "theme_mode"
     private const val KEY_LETTER_LAYOUT = "letter_layout"
