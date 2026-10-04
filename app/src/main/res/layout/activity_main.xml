@@ -74,48 +74,31 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:gravity="center"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
-        android:paddingBottom="20dp"
-        android:paddingTop="8dp">
+        android:paddingVertical="14dp">
 
         <!-- Row 1: Circles 0 and 1 -->
         <LinearLayout
             android:id="@+id/row_0"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="horizontal">
 
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <include
-                    android:id="@+id/cell_0"
-                    layout="@layout/item_circle" />
-
-            </FrameLayout>
+            <include
+                android:id="@+id/cell_0"
+                layout="@layout/item_circle" />
 
             <View
                 android:id="@+id/spacer_h_0"
                 android:layout_width="12dp"
-                android:layout_height="match_parent" />
+                android:layout_height="1dp" />
 
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <include
-                    android:id="@+id/cell_1"
-                    layout="@layout/item_circle" />
-
-            </FrameLayout>
+            <include
+                android:id="@+id/cell_1"
+                layout="@layout/item_circle" />
 
         </LinearLayout>
 
@@ -128,39 +111,22 @@
         <LinearLayout
             android:id="@+id/row_1"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="horizontal">
 
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <include
-                    android:id="@+id/cell_2"
-                    layout="@layout/item_circle" />
-
-            </FrameLayout>
+            <include
+                android:id="@+id/cell_2"
+                layout="@layout/item_circle" />
 
             <View
                 android:id="@+id/spacer_h_1"
                 android:layout_width="12dp"
-                android:layout_height="match_parent" />
+                android:layout_height="1dp" />
 
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <include
-                    android:id="@+id/cell_3"
-                    layout="@layout/item_circle" />
-
-            </FrameLayout>
+            <include
+                android:id="@+id/cell_3"
+                layout="@layout/item_circle" />
 
         </LinearLayout>
 
@@ -173,39 +139,22 @@
         <LinearLayout
             android:id="@+id/row_2"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="horizontal">
 
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <include
-                    android:id="@+id/cell_4"
-                    layout="@layout/item_circle" />
-
-            </FrameLayout>
+            <include
+                android:id="@+id/cell_4"
+                layout="@layout/item_circle" />
 
             <View
                 android:id="@+id/spacer_h_2"
                 android:layout_width="12dp"
-                android:layout_height="match_parent" />
+                android:layout_height="1dp" />
 
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <include
-                    android:id="@+id/cell_5"
-                    layout="@layout/item_circle" />
-
-            </FrameLayout>
+            <include
+                android:id="@+id/cell_5"
+                layout="@layout/item_circle" />
 
         </LinearLayout>
 

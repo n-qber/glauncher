@@ -87,9 +87,12 @@ class CircularRangeView @JvmOverloads constructor(
         val cy = h / 2f
         val radius = min(w, h) / 2f
 
+        val baseRadius = dpToPx(75f)
+        val scaleFactor = (radius / baseRadius).coerceAtLeast(0.1f)
+
         when {
             chars.size == 1 -> {
-                singleLetterPaint.textSize = spToPx(34f)
+                singleLetterPaint.textSize = spToPx(34f) * scaleFactor
                 val charStr = chars[0].toString()
                 val charBaseline = cy - (singleLetterPaint.descent() + singleLetterPaint.ascent()) / 2f
                 canvas.drawText(charStr, cx, charBaseline, singleLetterPaint)
@@ -106,10 +109,10 @@ class CircularRangeView @JvmOverloads constructor(
                         5 -> 19f
                         else -> 16f
                     }
-                    letterPaint.textSize = spToPx(baseSp)
+                    letterPaint.textSize = spToPx(baseSp) * scaleFactor
                     val measured = letterPaint.measureText(lineText)
                     if (measured > maxAllowedWidth && maxAllowedWidth > 0f) {
-                        letterPaint.textSize = spToPx(baseSp) * (maxAllowedWidth / measured)
+                        letterPaint.textSize = (spToPx(baseSp) * scaleFactor) * (maxAllowedWidth / measured)
                     }
                     val baseline = cy - (letterPaint.descent() + letterPaint.ascent()) / 2f
                     canvas.drawText(lineText, cx, baseline, letterPaint)
@@ -121,7 +124,7 @@ class CircularRangeView @JvmOverloads constructor(
                         4 -> Pair(22f, 0.40f)
                         else -> Pair(18f, 0.44f)
                     }
-                    letterPaint.textSize = spToPx(letterSp)
+                    letterPaint.textSize = spToPx(letterSp) * scaleFactor
                     val rLetters = radius * rFactor
 
                     val anglesDeg = when (n) {
@@ -144,7 +147,7 @@ class CircularRangeView @JvmOverloads constructor(
 
             else -> {
                 if (fallbackLabel.isNotEmpty()) {
-                    singleLetterPaint.textSize = spToPx(24f)
+                    singleLetterPaint.textSize = spToPx(24f) * scaleFactor
                     val labelBaseline = cy - (singleLetterPaint.descent() + singleLetterPaint.ascent()) / 2f
                     canvas.drawText(fallbackLabel, cx, labelBaseline, singleLetterPaint)
                 }

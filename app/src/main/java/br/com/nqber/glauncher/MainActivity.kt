@@ -19,6 +19,7 @@ import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.View
 import android.view.ViewConfiguration
+import android.util.TypedValue
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -26,6 +27,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
@@ -121,11 +123,7 @@ class MainActivity : AppCompatActivity() {
         orientationListener.enable()
 
         // Apply updated settings from SettingsActivity
-        applyCircleSpacing(
-            LauncherSettings.getSpacingHorizontal(this),
-            LauncherSettings.getSpacingVertical(this)
-        )
-        applyCircleScale(LauncherSettings.getCircleScale(this))
+        applyCircleDimensions()
 
         if (shouldResetOnResume) {
             shouldResetOnResume = false
@@ -215,11 +213,8 @@ class MainActivity : AppCompatActivity() {
         spacerV1 = findViewById(R.id.spacer_v_1)
 
         gridContainer.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
-            if ((right - left) != (oldRight - oldLeft) || (bottom - top) != (oldBottom - oldTop)) {
-                applyCircleSpacing(
-                    LauncherSettings.getSpacingHorizontal(this),
-                    LauncherSettings.getSpacingVertical(this)
-                )
+            if ((right - left) != (oldRight - oldLeft) || (bottom - top) != (oldBottom - oldTop) || (right - left > 0 && oldRight - oldLeft == 0)) {
+                applyCircleDimensions()
             }
         }
 
@@ -295,7 +290,12 @@ class MainActivity : AppCompatActivity() {
             addAction(Intent.ACTION_PACKAGE_REPLACED)
             addDataScheme("package")
         }
-        registerReceiver(packageReceiver, filter)
+        ContextCompat.registerReceiver(
+            this,
+            packageReceiver,
+            filter,
+            ContextCompat.RECEIVER_EXPORTED
+        )
     }
 
     private fun resetToRoot(forceReload: Boolean = false) {
@@ -345,56 +345,89 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyCircleSpacing(spacingHDp: Int, spacingVDp: Int) {
+    private fun applyCircleDimensions() {
+        val spacingHDp = LauncherSettings.getSpacingHorizontal(this)
+        val spacingVDp = LauncherSettings.getSpacingVertical(this)
+        val scalePercent = LauncherSettings.getCircleScale(this)
+
         val hPx = (spacingHDp * resources.displayMetrics.density).toInt()
         val vPx = (spacingVDp * resources.displayMetrics.density).toInt()
 
         val hSpacers = listOf(spacerH0, spacerH1, spacerH2)
         for (spacer in hSpacers) {
             val lp = spacer.layoutParams
-            lp.width = hPx
-            spacer.layoutParams = lp
+            if (lp.width != hPx) {
+                lp.width = hPx
+                spacer.layoutParams = lp
+            }
         }
 
         val vSpacers = listOf(spacerV0, spacerV1)
         for (spacer in vSpacers) {
             val lp = spacer.layoutParams
-            lp.height = vPx
-            spacer.layoutParams = lp
+            if (lp.height != vPx) {
+                lp.height = vPx
+                spacer.layoutParams = lp
+            }
         }
 
         val gridWidth = gridContainer.width
         val gridHeight = gridContainer.height
-        if (gridWidth > 0 && gridHeight > 0) {
-            val paddingH = gridContainer.paddingLeft + gridContainer.paddingRight
-            val availableWidth = gridWidth - paddingH - hPx
-            val cellWidth = availableWidth / 2
+        if (gridWidth <= 0 || gridHeight <= 0) return
 
-            val paddingV = gridContainer.paddingTop + gridContainer.paddingBottom
-            val availableHeight = gridHeight - paddingV - (2 * vPx)
-            val maxCellHeight = availableHeight / 3
+        val paddingH = gridContainer.paddingLeft + gridContainer.paddingRight
+        val paddingV = gridContainer.paddingTop + gridContainer.paddingBottom
 
-            val finalCellSize = minOf(cellWidth, maxCellHeight)
+        val availableWidth = (gridWidth - paddingH - hPx).coerceAtLeast(0)
+        val maxCircleWidth = availableWidth / 2
 
-            if (finalCellSize > 0) {
-                val rows = listOf(row0, row1, row2)
-                for (row in rows) {
-                    val lp = row.layoutParams as? LinearLayout.LayoutParams
-                    if (lp != null) {
-                        lp.height = finalCellSize
-                        lp.weight = 0f
-                        row.layoutParams = lp
-                    }
-                }
+        val availableHeight = (gridHeight - paddingV - (2 * vPx)).coerceAtLeast(0)
+        val maxCircleHeight = availableHeight / 3
+
+        val maxDiameter = minOf(maxCircleWidth, maxCircleHeight)
+        if (maxDiameter <= 0) return
+
+        val circleDiameter = (maxDiameter * (scalePercent / 100f)).toInt().coerceAtLeast(1)
+
+        for (holder in circleHolders) {
+            val lp = holder.root.layoutParams
+            if (lp.width != circleDiameter || lp.height != circleDiameter) {
+                lp.width = circleDiameter
+                lp.height = circleDiameter
+                holder.root.layoutParams = lp
+            }
+            holder.root.scaleX = 1f
+            holder.root.scaleY = 1f
+
+            val iconSize = (circleDiameter * 0.46f).toInt()
+            val iconLp = holder.appIcon.layoutParams
+            if (iconLp.width != iconSize || iconLp.height != iconSize) {
+                iconLp.width = iconSize
+                iconLp.height = iconSize
+                holder.appIcon.layoutParams = iconLp
+            }
+
+            val minTextDiameter = (52 * resources.displayMetrics.density).toInt()
+            if (circleDiameter < minTextDiameter) {
+                holder.appLabel.visibility = View.GONE
+            } else {
+                holder.appLabel.visibility = View.VISIBLE
+                val textSizePx = (circleDiameter * 0.082f).coerceIn(
+                    8f * resources.displayMetrics.density,
+                    13f * resources.displayMetrics.density
+                )
+                holder.appLabel.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSizePx)
             }
         }
-    }
 
-    private fun applyCircleScale(scalePercent: Int) {
-        val scale = scalePercent / 100f
-        for (holder in circleHolders) {
-            holder.root.scaleX = scale
-            holder.root.scaleY = scale
+        val rows = listOf(row0, row1, row2)
+        for (row in rows) {
+            val lp = row.layoutParams as? LinearLayout.LayoutParams
+            if (lp != null && (lp.height != circleDiameter || lp.weight != 0f)) {
+                lp.height = circleDiameter
+                lp.weight = 0f
+                row.layoutParams = lp
+            }
         }
     }
 
@@ -484,8 +517,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupCircleTouchListener(holder: CircleViewHolder, index: Int) {
         holder.root.setOnTouchListener { v, event ->
-            val baseScale = LauncherSettings.getCircleScale(this) / 100f
-            val pressScale = baseScale * 0.92f
+            val pressScale = 0.92f
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
@@ -507,7 +539,7 @@ class MainActivity : AppCompatActivity() {
                                 isLongPressTriggered = true
                                 longPressRunnable = null
                                 v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                                v.animate().scaleX(baseScale).scaleY(baseScale).setDuration(80).start()
+                                v.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
                                 showAppOptionsDialog(app)
                             }
                             longPressRunnable = runnable
@@ -536,7 +568,7 @@ class MainActivity : AppCompatActivity() {
                     cancelLongPress()
 
                     for (h in circleHolders) {
-                        h.root.animate().scaleX(baseScale).scaleY(baseScale).setDuration(80).start()
+                        h.root.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
                     }
 
                     if (isLongPressTriggered) {
@@ -547,7 +579,7 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     // Generous hit tolerance around the touched circle:
-                    val tolerance = 40f * resources.displayMetrics.density
+                    val tolerance = (v.width * 0.25f).coerceAtMost(32f * resources.displayMetrics.density)
                     val isInside = event.x in -tolerance..(v.width + tolerance) &&
                                    event.y in -tolerance..(v.height + tolerance)
 
@@ -577,7 +609,7 @@ class MainActivity : AppCompatActivity() {
                     cancelLongPress()
                     isLongPressTriggered = false
                     for (h in circleHolders) {
-                        h.root.animate().scaleX(baseScale).scaleY(baseScale).setDuration(80).start()
+                        h.root.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
                     }
                     cancelPreview()
                     touchedBucketAtDown = null
@@ -607,16 +639,14 @@ class MainActivity : AppCompatActivity() {
             CircularRangeView.LetterLayout.CIRCULAR
         }
 
-        val baseScale = LauncherSettings.getCircleScale(this) / 100f
-
         for (i in 0 until 6) {
             val holder = circleHolders[i]
             val bucket = previewBuckets.getOrNull(i)
 
             holder.rangeView.rotation = currentRotationAngle
             holder.appContainer.rotation = currentRotationAngle
-            holder.root.scaleX = baseScale
-            holder.root.scaleY = baseScale
+            holder.root.scaleX = 1f
+            holder.root.scaleY = 1f
 
             if (bucket == null) {
                 holder.root.visibility = View.INVISIBLE
@@ -783,13 +813,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestUninstall(packageName: String) {
+        shouldResetOnResume = true
         try {
             val intent = Intent(Intent.ACTION_DELETE).apply {
                 data = Uri.parse("package:$packageName")
+                putExtra(Intent.EXTRA_RETURN_RESULT, true)
             }
             startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(this, getString(R.string.error_uninstall), Toast.LENGTH_SHORT).show()
+            try {
+                @Suppress("DEPRECATION")
+                val fallbackIntent = Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
+                    data = Uri.parse("package:$packageName")
+                    putExtra(Intent.EXTRA_RETURN_RESULT, true)
+                }
+                startActivity(fallbackIntent)
+            } catch (e2: Exception) {
+                Toast.makeText(this, getString(R.string.error_uninstall), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }

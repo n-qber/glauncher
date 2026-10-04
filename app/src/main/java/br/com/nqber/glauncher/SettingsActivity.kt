@@ -108,11 +108,11 @@ class SettingsActivity : AppCompatActivity() {
 
         val currentScale = LauncherSettings.getCircleScale(this)
         labelSize.text = "Tamanho: $currentScale%"
-        seekbarSize.progress = currentScale - 60
+        seekbarSize.progress = (currentScale - 15).coerceIn(0, 85)
 
         seekbarSize.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val scale = progress + 60
+                val scale = progress + 15
                 labelSize.text = "Tamanho: $scale%"
                 if (fromUser) {
                     LauncherSettings.setCircleScale(this@SettingsActivity, scale)
